@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1d4ed8">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Exam Cleaner v2.1｜考卷掃描與校正</title>
 <style>
 html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#eef2f7}
@@ -16,6 +18,7 @@ iframe{display:block}
 <div id="loading">正在載入 Exam Cleaner v2.1 正式版…<br><small>首次開啟需要網路連線載入影像處理模組</small></div>
 <iframe id="app" src="./preview/v2.1/index.html?v=210-20260805-1734" title="Exam Cleaner v2.1"></iframe>
 <script>
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 const frame=document.getElementById('app');
 frame.addEventListener('load',()=>{
   try{
