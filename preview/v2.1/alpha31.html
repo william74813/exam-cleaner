@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Exam Cleaner v2.1 Alpha.3.1</title>
+<style>html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#eef2f7}#loading{position:fixed;inset:0;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;color:#1d4ed8;background:#eef2f7;z-index:2;text-align:center;padding:24px}iframe{display:block}</style>
+</head>
+<body>
+<div id="loading">正在載入 Alpha.3.1 灰階預設版…</div>
+<iframe id="app" src="./index.html?v=alpha31-20260805-1545" title="Exam Cleaner Alpha 3.1"></iframe>
+<script>
+const frame=document.getElementById('app');
+frame.addEventListener('load',()=>{
+  try{
+    const doc=frame.contentDocument;
+    const load=(src,onload,onerror)=>{const s=doc.createElement('script');s.src=src;s.onload=onload;s.onerror=onerror;doc.body.appendChild(s)};
+    const fail=()=>{document.getElementById('loading').textContent='模組載入失敗，請關閉分頁後重開。'};
+    load('./detect-v5.js?v=alpha31-20260805-1545',()=>{
+      load('./enhance-v1.js?v=alpha31-20260805-1545',()=>{
+        load('./default-gray-v1.js?v=alpha31-20260805-1545',()=>document.getElementById('loading').remove(),fail);
+      },fail);
+    },fail);
+  }catch(error){document.getElementById('loading').textContent='無法載入 Alpha.3.1：'+error.message;}
+});
+</script>
+</body>
+</html>
