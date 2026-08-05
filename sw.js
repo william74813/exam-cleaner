@@ -1,8 +1,9 @@
-const CACHE = 'exam-cleaner-v2.1.0-20260805';
+const CACHE = 'exam-cleaner-v2.1.0-20260805-r2';
 const CORE = [
   './',
   './index.html',
   './scanner.html',
+  './release-v2.1.html',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
