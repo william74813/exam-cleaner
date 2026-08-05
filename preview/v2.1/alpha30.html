@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Exam Cleaner v2.1 Alpha.3</title>
+<style>html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#eef2f7}#loading{position:fixed;inset:0;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;color:#1d4ed8;background:#eef2f7;z-index:2;text-align:center;padding:24px}iframe{display:block}</style>
+</head>
+<body>
+<div id="loading">正在載入 Alpha.3 影像增強版…</div>
+<iframe id="app" src="./index.html?v=alpha30-20260805-1540" title="Exam Cleaner Alpha 3"></iframe>
+<script>
+const frame=document.getElementById('app');
+frame.addEventListener('load',()=>{
+  try{
+    const doc=frame.contentDocument;
+    const detection=doc.createElement('script');
+    detection.src='./detect-v5.js?v=alpha30-20260805-1540';
+    detection.onload=()=>{
+      const enhancement=doc.createElement('script');
+      enhancement.src='./enhance-v1.js?v=alpha30-20260805-1540';
+      enhancement.onload=()=>document.getElementById('loading').remove();
+      enhancement.onerror=()=>{document.getElementById('loading').textContent='影像增強模組載入失敗，請關閉分頁後重開。'};
+      doc.body.appendChild(enhancement);
+    };
+    detection.onerror=()=>{document.getElementById('loading').textContent='四角偵測模組載入失敗，請關閉分頁後重開。'};
+    doc.body.appendChild(detection);
+  }catch(error){document.getElementById('loading').textContent='無法載入 Alpha.3：'+error.message;}
+});
+</script>
+</body>
+</html>
