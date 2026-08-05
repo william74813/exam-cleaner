@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Exam Cleaner v2.1 Alpha.2.3</title>
+<style>html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#eef2f7}#loading{position:fixed;inset:0;display:grid;place-items:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;color:#1d4ed8;background:#eef2f7;z-index:2;text-align:center;padding:24px}iframe{display:block}</style>
+</head>
+<body>
+<div id="loading">正在載入 Alpha.2.3…</div>
+<iframe id="app" src="./index.html?v=alpha23-20260805-1530" title="Exam Cleaner Alpha 2.3"></iframe>
+<script>
+const frame=document.getElementById('app');
+frame.addEventListener('load',()=>{
+  try{
+    const doc=frame.contentDocument;
+    const script=doc.createElement('script');
+    script.src='./detect-v3.js?v=alpha23-20260805-1530';
+    script.onload=()=>document.getElementById('loading').remove();
+    script.onerror=()=>{document.getElementById('loading').textContent='Alpha.2.3 模組載入失敗，請關閉分頁後重開。'};
+    doc.body.appendChild(script);
+  }catch(error){document.getElementById('loading').textContent='無法載入 Alpha.2.3：'+error.message;}
+});
+</script>
+</body>
+</html>
