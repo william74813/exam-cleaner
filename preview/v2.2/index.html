@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d4ed8">
+<title>Exam Cleaner v2.2｜統一 AI 去筆跡</title>
+<style>
+:root{--blue:#1d4ed8;--green:#087f5b;--orange:#c2410c;--bg:#eef2f7;--ink:#172033;--muted:#667085;--line:#d9e2ef}*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;background:var(--bg);color:var(--ink)}header{background:#fff;border-bottom:1px solid var(--line);padding:14px 16px;position:sticky;top:0;z-index:20}.head{max-width:1180px;margin:auto;display:flex;align-items:center;gap:10px}.logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(145deg,var(--blue),var(--green));color:#fff;display:grid;place-items:center;font-weight:900}.head h1{margin:0;font-size:19px}.head p{margin:3px 0 0;color:var(--muted);font-size:12px}.badge{margin-left:auto;padding:4px 9px;border-radius:999px;background:#fff7ed;color:#9a3412;font-size:11px;font-weight:800}main{max-width:1180px;margin:15px auto;padding:0 12px 28px}.layout{display:grid;grid-template-columns:320px minmax(0,1fr);gap:13px}.card{background:#fff;border:1px solid var(--line);border-radius:17px;box-shadow:0 8px 24px rgba(30,48,85,.07)}.panel{padding:15px}.section{padding:11px 0;border-bottom:1px solid #edf1f6}.section:last-child{border:0}.section h2{font-size:14px;margin:0 0 8px}label{display:block;font-size:12px;color:#475467;margin:7px 0 4px}input[type=file],input[type=url]{width:100%;border:1px solid #cfd7e3;border-radius:9px;padding:10px;background:#fff}.check{display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.55;color:#475467;margin:9px 0}.check input{margin-top:2px}.small{font-size:11px;color:var(--muted);line-height:1.6}.notice{padding:10px;border-radius:10px;background:#eff6ff;color:#1e3a8a;font-size:11px;line-height:1.6}.warn{background:#fff7ed;color:#9a3412}.success{background:#ecfdf3;color:#067647}button,.button{width:100%;border:0;border-radius:11px;padding:11px 12px;font-weight:800;background:#e5e7eb;color:#475467;text-align:center;text-decoration:none;display:block}button.primary{background:var(--blue);color:#fff}button.green{background:var(--green);color:#fff}button:disabled{opacity:.45}.viewer{padding:13px}.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px}.toolbar strong{font-size:14px}.toolbar span{margin-left:auto;font-size:11px;color:var(--muted)}.compare{position:relative;min-height:520px;background:#cbd5e1;border-radius:13px;overflow:auto;display:grid;place-items:center;padding:14px}.frame{position:relative;display:inline-block;max-width:100%;background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.24);overflow:hidden}.frame img{display:block;max-width:100%;height:auto}.afterLayer{position:absolute;inset:0;overflow:hidden;width:50%;border-right:3px solid #2563eb}.afterLayer img{width:100%;max-width:none;height:100%;object-fit:fill}.divider{position:absolute;top:0;bottom:0;left:50%;width:3px;background:#2563eb;transform:translateX(-1.5px);pointer-events:none}.handle{position:absolute;top:50%;left:50%;width:44px;height:44px;border-radius:50%;background:#2563eb;color:#fff;display:grid;place-items:center;transform:translate(-50%,-50%);font-weight:900;box-shadow:0 3px 12px rgba(0,0,0,.3);pointer-events:none}.range{width:100%;margin-top:11px}.empty{padding:42px 18px;text-align:center;color:#667085;line-height:1.7}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.metric{background:#f8fafc;border:1px solid #e4eaf2;border-radius:10px;padding:9px}.metric b{display:block;font-size:16px}.metric span{font-size:10px;color:var(--muted)}#status{margin-top:10px}@media(max-width:760px){.layout{display:block}.panel{margin-bottom:12px}.compare{min-height:390px;padding:8px}.metrics{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="head"><div class="logo">AI</div><div><h1>Exam Cleaner v2.2</h1><p>單一去筆跡流程：保留印刷內容，移除所有後加筆跡</p></div><span class="badge">開發預覽</span></div></header>
+<main><div class="layout">
+<aside class="card panel">
+<div class="section"><h2>1. 選擇校正後考卷</h2><input id="file" type="file" accept="image/*"><p class="small">建議先使用 v2.1 完成框選、透視校正與灰階增強。</p></div>
+<div class="section"><h2>2. 安全 Proxy 設定</h2><label for="endpoint">Proxy URL</label><input id="endpoint" type="url" inputmode="url" placeholder="https://your-worker.example.com/api/clean"><p class="small">正式版不在前端放置 Gemini API Key。此網址只保留於目前分頁工作階段。</p></div>
+<div class="section"><h2>3. 統一 AI 去筆跡</h2><div class="notice">會移除手寫答案、鉛筆／原子筆字、老師批改、分數、勾叉、圈選與註記；不區分老師或學生。</div><button id="process" class="primary" disabled style="margin-top:9px">開始去筆跡</button><div id="status" class="notice warn">請先選擇圖片並設定 Proxy URL。</div></div>
+<div class="section"><h2>4. 人工覆核</h2><label class="check"><input id="approved" type="checkbox" disabled><span>我已確認題目、文字、公式、表格、圖片、QR Code 與版面均完整，AI 沒有新增答案或改寫內容。</span></label><button id="download" class="green" disabled>下載覆核後圖片</button></div>
+<div class="section"><a class="button" href="../../scanner.html">返回 v2.1 掃描器</a></div>
+</aside>
+<section class="card viewer"><div class="toolbar"><strong>處理前／後比較</strong><span>拖曳滑桿比較</span></div><div id="compare" class="compare"><div id="empty" class="empty">尚未載入考卷<br>請先選擇 v2.1 校正後的圖片</div><div id="frame" class="frame" hidden><img id="before" alt="處理前"><div id="afterLayer" class="afterLayer"><img id="after" alt="處理後"></div><div id="divider" class="divider"></div><div id="handle" class="handle">↔</div></div></div><input id="slider" class="range" type="range" min="0" max="100" value="50" disabled><div class="metrics"><div class="metric"><b id="ratio">—</b><span>長寬比差異</span></div><div class="metric"><b id="resolution">—</b><span>輸出解析度</span></div><div class="metric"><b id="changed">—</b><span>像素變動比例</span></div></div></section>
+</div></main>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const state = { before: null, after: null, beforeInfo: null, afterInfo: null };
+
+  $('endpoint').value = sessionStorage.getItem('examCleanerProxy') || '';
+
+  function setStatus(message, type = 'warn') {
+    const element = $('status');
+    element.textContent = message;
+    element.className = `notice ${type}`;
+  }
+
+  function updateControls() {
+    $('process').disabled = !(state.before && $('endpoint').value.trim());
+    $('approved').disabled = !state.after;
+    $('download').disabled = !(state.after && $('approved').checked);
+  }
+
+  function loadImage(url) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('無法讀取圖片'));
+      image.src = url;
+    });
+  }
+
+  async function optimizeFile(file) {
+    const raw = URL.createObjectURL(file);
+    try {
+      const image = await loadImage(raw);
+      const maxSide = 2200;
+      const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#fff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      return { url: canvas.toDataURL('image/jpeg', 0.94), width: canvas.width, height: canvas.height };
+    } finally {
+      URL.revokeObjectURL(raw);
+    }
+  }
+
+  function showComparison() {
+    $('empty').hidden = true;
+    $('frame').hidden = false;
+    $('before').src = state.before;
+    $('after').src = state.after || state.before;
+    $('slider').disabled = !state.after;
+    syncSlider();
+  }
+
+  function syncSlider() {
+    const value = Number($('slider').value);
+    $('afterLayer').style.width = `${value}%`;
+    $('divider').style.left = `${value}%`;
+    $('handle').style.left = `${value}%`;
+  }
+
+  async function differenceRatio(beforeUrl, afterUrl) {
+    const [beforeImage, afterImage] = await Promise.all([loadImage(beforeUrl), loadImage(afterUrl)]);
+    const width = 240;
+    const height = Math.max(1, Math.round(width * beforeImage.height / beforeImage.width));
+    const make = image => {
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      context.drawImage(image, 0, 0, width, height);
+      return context.getImageData(0, 0, width, height).data;
+    };
+    const first = make(beforeImage), second = make(afterImage);
+    let changed = 0;
+    for (let index = 0; index < first.length; index += 4) {
+      const a = first[index] * .299 + first[index + 1] * .587 + first[index + 2] * .114;
+      const b = second[index] * .299 + second[index + 1] * .587 + second[index + 2] * .114;
+      if (Math.abs(a - b) > 24) changed++;
+    }
+    return changed / (first.length / 4);
+  }
+
+  async function analyzeResult() {
+    const beforeRatio = state.beforeInfo.width / state.beforeInfo.height;
+    const afterRatio = state.afterInfo.width / state.afterInfo.height;
+    const ratioDifference = Math.abs(afterRatio - beforeRatio) / beforeRatio;
+    const resolutionRatio = (state.afterInfo.width * state.afterInfo.height) / (state.beforeInfo.width * state.beforeInfo.height);
+    const changed = await differenceRatio(state.before, state.after);
+
+    $('ratio').textContent = `${(ratioDifference * 100).toFixed(1)}%`;
+    $('resolution').textContent = `${state.afterInfo.width}×${state.afterInfo.height}`;
+    $('changed').textContent = `${Math.round(changed * 100)}%`;
+
+    const warnings = [];
+    if (ratioDifference > .02) warnings.push('輸出長寬比改變超過 2%');
+    if (resolutionRatio < .45) warnings.push('輸出解析度明顯降低');
+    if (changed > .38) warnings.push('大範圍像素被改動，可能影響印刷內容');
+
+    if (warnings.length) {
+      setStatus(`AI 已完成，但需特別檢查：${warnings.join('；')}。`, 'warn');
+    } else {
+      setStatus('AI 已完成。請拖曳滑桿逐區檢查印刷內容，再勾選人工覆核。', 'success');
+    }
+  }
+
+  $('file').addEventListener('change', async event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const result = await optimizeFile(file);
+      state.before = result.url;
+      state.beforeInfo = { width: result.width, height: result.height, mimeType: 'image/jpeg' };
+      state.after = null; state.afterInfo = null;
+      $('approved').checked = false;
+      $('ratio').textContent = $('resolution').textContent = $('changed').textContent = '—';
+      showComparison();
+      setStatus('圖片已載入。設定安全 Proxy URL 後即可開始去筆跡。', 'success');
+      updateControls();
+    } catch (error) {
+      setStatus(error.message, 'warn');
+    }
+  });
+
+  $('endpoint').addEventListener('input', () => {
+    sessionStorage.setItem('examCleanerProxy', $('endpoint').value.trim());
+    updateControls();
+  });
+
+  $('slider').addEventListener('input', syncSlider);
+  $('approved').addEventListener('change', updateControls);
+
+  $('process').addEventListener('click', async () => {
+    const endpoint = $('endpoint').value.trim();
+    if (!endpoint || !state.before) return;
+    $('process').disabled = true;
+    $('approved').checked = false;
+    setStatus('AI 正在移除所有後加筆跡，請保持此頁面開啟……', 'warn');
+
+    try {
+      const [header, data] = state.before.split(',');
+      const mimeType = /data:([^;]+)/.exec(header)?.[1] || 'image/jpeg';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          version: 'exam-clean-v1',
+          image: { mimeType, data },
+          options: {
+            removeAllAddedMarks: true,
+            preservePrintedContent: true,
+            preserveLayout: true,
+            outputMimeType: 'image/png'
+          }
+        })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || `Proxy 回傳錯誤 ${response.status}`);
+      if (!payload.image?.data) throw new Error('Proxy 沒有回傳圖片');
+
+      state.after = `data:${payload.image.mimeType || 'image/png'};base64,${payload.image.data}`;
+      const image = await loadImage(state.after);
+      state.afterInfo = { width: image.width, height: image.height };
+      showComparison();
+      await analyzeResult();
+    } catch (error) {
+      state.after = null; state.afterInfo = null;
+      showComparison();
+      setStatus(`處理失敗：${error.message}`, 'warn');
+    } finally {
+      updateControls();
+    }
+  });
+
+  $('download').addEventListener('click', () => {
+    if (!state.after || !$('approved').checked) return;
+    const link = document.createElement('a');
+    link.href = state.after;
+    link.download = 'exam-cleaner-ai-reviewed.png';
+    link.click();
+  });
+
+  updateControls();
+})();
+</script>
+</body>
+</html>
