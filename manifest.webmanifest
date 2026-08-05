@@ -1,12 +1,11 @@
 {
-  "name": "考卷去筆跡工具・旗艦版",
-  "short_name": "考卷重製",
+  "name": "考卷重製 Ultimate AI",
+  "short_name": "考卷 AI",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#eef2f7",
-  "theme_color": "#1d4ed8",
-  "description": "免費、離線的多頁考卷去筆跡與重製工具",
+  "background_color": "#edf2f7",
+  "theme_color": "#173ea5",
   "icons": [
     {
       "src": "icon-192.png",

@@ -1,24 +1,15 @@
-考卷去筆跡工具・旗艦版 PWA
+考卷重製 Ultimate AI v2.0
 
-【最快使用方式】
-1. 解壓縮本 ZIP。
-2. 電腦測試：用本機網站伺服器開啟資料夾。
-   - Python：在資料夾內執行 python -m http.server 8000
-   - 瀏覽器開啟 http://localhost:8000
-3. iPhone 安裝：必須先部署到 HTTPS 網站。
-   可免費使用 GitHub Pages、Cloudflare Pages 或 Netlify。
-4. Safari 開啟部署後的網址 → 分享 → 加入主畫面。
+更新 GitHub Pages：
+1. 解壓縮 ZIP。
+2. 將 index.html、app.js、sw.js、manifest.webmanifest、icon-192.png、icon-512.png 全部上傳到 exam-cleaner repository。
+3. GitHub 詢問同名檔案時直接覆蓋並 Commit changes。
+4. 等約 1–2 分鐘後重新整理網站；若仍是舊版，Safari 清除該網站資料或移除主畫面 App 後重新加入。
 
-【主要功能】
-- 多頁照片匯入與縮圖管理
-- 去紅筆、藍筆、綠筆、螢光筆
-- 鉛筆淡化、紙張白化、黑白重製
-- 旋轉、自動裁白邊、手動框選裁切
-- 白色橡皮擦、復原／重做
-- IndexedDB 離線儲存專案
-- 多頁 PDF 匯出
-- PWA 離線快取與加入主畫面
+AI 設定：
+- 在 Google AI Studio 建立 Gemini API Key。
+- 網站右上角「AI 設定」貼入金鑰。
+- 金鑰只存 sessionStorage，關閉分頁後清除。
+- AI 呼叫是否免費、額度與模型可用性依 Google 當期方案。
 
-【限制】
-本工具完全在瀏覽器內運算，不使用雲端 AI。
-黑色手寫答案與原始黑色印刷字很難自動區分，需使用橡皮擦手動修除。
+注意：AI 可能誤改數學符號、小字、圖形或題目，列印前務必人工覆核。
