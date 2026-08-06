@@ -34,7 +34,7 @@
         height: resultCanvas.height,
         createdAt: new Date().toISOString()
       }));
-      const target = new URL('../v2.2/alpha2.html', window.location.href).href;
+      const target = new URL('../v2.2/alpha21.html?v=20260806-0950', window.location.href).href;
       window.top.location.href = target;
     } catch (error) {
       if (typeof setStatus === 'function') {
