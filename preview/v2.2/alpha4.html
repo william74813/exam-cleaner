@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d4ed8">
+<title>Exam Cleaner v2.2 Alpha.4｜AI Proxy 驗證</title>
+<style>
+html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#eef2f7}
+#loading{position:fixed;inset:0;display:grid;place-items:center;background:#eef2f7;color:#1d4ed8;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;text-align:center;padding:24px;line-height:1.7;z-index:2}
+iframe{display:block}
+</style>
+</head>
+<body>
+<div id="loading">正在載入 v2.2 Alpha.4…</div>
+<iframe id="app" src="./alpha2.html?v=alpha4-20260806-1031" title="Exam Cleaner v2.2 Alpha.4"></iframe>
+<script>
+const frame=document.getElementById('app');
+frame.addEventListener('load',()=>{
+  try{
+    const doc=frame.contentDocument;
+    const queue=[
+      './alpha3-guard.js?v=alpha4-20260806-1031',
+      './alpha4-proxy-check.js?v=alpha4-20260806-1031'
+    ];
+    const fail=()=>{document.getElementById('loading').textContent='Alpha.4 模組載入失敗，請關閉分頁後重新開啟。';};
+    const next=()=>{
+      if(!queue.length){document.getElementById('loading')?.remove();return;}
+      const script=doc.createElement('script');
+      script.src=queue.shift();
+      script.onload=next;
+      script.onerror=fail;
+      doc.body.appendChild(script);
+    };
+    next();
+  }catch(error){document.getElementById('loading').textContent='無法載入 Alpha.4：'+error.message;}
+});
+</script>
+</body>
+</html>
