@@ -8,8 +8,8 @@ const ENDPOINT = 'https://proxy.example.workers.dev/api/clean';
 function env(overrides = {}) {
   return {
     ALLOWED_ORIGIN: ORIGIN,
-    GEMINI_MODEL: 'gemini-3.1-flash-image',
-    GEMINI_API_KEY: 'test-gemini-key',
+    OPENAI_MODEL: 'gpt-image-1.5',
+    OPENAI_API_KEY: 'test-openai-key',
     ACCESS_TOKEN: 'test-access-token',
     CLEAN_RATE_LIMITER: {
       async limit() {
@@ -48,7 +48,7 @@ function cleanRequest({ origin = ORIGIN, token = 'test-access-token', body = {} 
   });
 }
 
-test('health endpoint reports readiness without exposing secrets', async () => {
+test('health endpoint reports OpenAI readiness without exposing secrets', async () => {
   const response = await createHandler().fetch(
     new Request('https://proxy.example.workers.dev/health'),
     env()
@@ -56,8 +56,10 @@ test('health endpoint reports readiness without exposing secrets', async () => {
   assert.equal(response.status, 200);
   const payload = await response.json();
   assert.equal(payload.ready, true);
+  assert.equal(payload.provider, 'openai');
+  assert.equal(payload.model, 'gpt-image-1.5');
   assert.equal(payload.apiVersion, 'exam-clean-v2');
-  assert.equal(JSON.stringify(payload).includes('test-gemini-key'), false);
+  assert.equal(JSON.stringify(payload).includes('test-openai-key'), false);
   assert.equal(JSON.stringify(payload).includes('test-access-token'), false);
 });
 
@@ -79,14 +81,25 @@ test('rejects requests when the Cloudflare rate limiter is exhausted', async () 
   assert.equal(response.status, 429);
 });
 
-test('returns the edited image from a successful Gemini response', async () => {
+test('returns the edited image from a successful OpenAI response', async () => {
+  let upstreamUrl = null;
+  let upstreamHeaders = null;
   let upstreamBody = null;
   const handler = createHandler({
-    fetchImpl: async (_url, init) => {
+    fetchImpl: async (url, init) => {
+      upstreamUrl = url;
+      upstreamHeaders = init.headers;
       upstreamBody = JSON.parse(init.body);
       return new Response(JSON.stringify({
-        candidates: [{ content: { parts: [{ inlineData: { mimeType: 'image/png', data: 'cleaned-image-base64' } }] } }]
-      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        output_format: 'png',
+        data: [{ b64_json: 'cleaned-image-base64' }]
+      }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-request-id': 'provider-request-1'
+        }
+      });
     }
   });
 
@@ -95,7 +108,30 @@ test('returns the edited image from a successful Gemini response', async () => {
   const payload = await response.json();
   assert.equal(payload.image.data, 'cleaned-image-base64');
   assert.equal(payload.image.mimeType, 'image/png');
-  assert.equal(payload.meta.model, 'gemini-3.1-flash-image');
-  assert.deepEqual(upstreamBody.generationConfig.responseModalities, ['IMAGE']);
-  assert.equal(upstreamBody.contents[0].parts[1].inline_data.mime_type, 'image/png');
+  assert.equal(payload.meta.provider, 'openai');
+  assert.equal(payload.meta.model, 'gpt-image-1.5');
+  assert.equal(payload.meta.providerRequestId, 'provider-request-1');
+  assert.equal(upstreamUrl, 'https://api.openai.com/v1/images/edits');
+  assert.equal(upstreamHeaders.Authorization, 'Bearer test-openai-key');
+  assert.equal(upstreamBody.model, 'gpt-image-1.5');
+  assert.equal(upstreamBody.input_fidelity, 'high');
+  assert.equal(upstreamBody.quality, 'high');
+  assert.equal(upstreamBody.output_format, 'png');
+  assert.equal(upstreamBody.images.length, 1);
+  assert.ok(upstreamBody.images[0].image_url.startsWith('data:image/png;base64,'));
+  assert.equal(upstreamBody.prompt.includes('PRINTED CONTENT IS IMMUTABLE'), true);
+});
+
+test('maps an invalid OpenAI key to a user-safe error', async () => {
+  const handler = createHandler({
+    fetchImpl: async () => new Response(JSON.stringify({
+      error: { type: 'invalid_request_error', code: 'invalid_api_key', message: 'secret provider detail' }
+    }), { status: 401, headers: { 'Content-Type': 'application/json' } })
+  });
+
+  const response = await handler.fetch(cleanRequest(), env());
+  assert.equal(response.status, 502);
+  const payload = await response.json();
+  assert.equal(payload.error, 'OpenAI API Key 無效或沒有模型權限');
+  assert.equal(JSON.stringify(payload).includes('secret provider detail'), false);
 });

@@ -61,24 +61,26 @@ export default {
     if (request.method !== 'GET') {
       return response({ error: 'Method not allowed' }, 405, origin);
     }
-    if (!env.GEMINI_API_KEY || !env.ACCESS_TOKEN) {
+    if (!env.OPENAI_API_KEY || !env.ACCESS_TOKEN) {
       return response({
         authorized: false,
         ready: false,
+        provider: 'openai',
         error: 'Proxy Secrets 尚未設定完成'
       }, 503, origin);
     }
 
     const supplied = request.headers.get('X-Exam-Cleaner-Token') || '';
     if (!(await secureEquals(supplied, env.ACCESS_TOKEN))) {
-      return response({ authorized: false, ready: true, error: '存取權杖錯誤' }, 401, origin);
+      return response({ authorized: false, ready: true, provider: 'openai', error: '存取權杖錯誤' }, 401, origin);
     }
 
     return response({
       authorized: true,
       ready: true,
+      provider: 'openai',
       apiVersion: 'exam-clean-v2',
-      model: env.GEMINI_MODEL || 'gemini-3.1-flash-image'
+      model: env.OPENAI_MODEL || 'gpt-image-1.5'
     }, 200, origin);
   }
 };

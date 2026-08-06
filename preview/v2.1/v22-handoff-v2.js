@@ -8,7 +8,7 @@
   const button = document.createElement('button');
   button.id = 'sendToV22';
   button.className = 'green';
-  button.textContent = '送往 v2.2 去筆跡';
+  button.textContent = '送往 v2.2 OpenAI 去筆跡';
   button.disabled = true;
   button.style.marginTop = '10px';
   button.style.width = '100%';
@@ -16,7 +16,7 @@
 
   const help = document.createElement('p');
   help.className = 'small';
-  help.textContent = '只傳送目前校正結果；圖片保留在同一個瀏覽器分頁工作階段，不會因此上傳。';
+  help.textContent = '只傳送目前校正結果；圖片保留在同一個瀏覽器分頁工作階段，進入 OpenAI 模式前仍須通過安全 Proxy 驗證。';
   resultBox.appendChild(help);
 
   function update() {
@@ -30,11 +30,12 @@
       sessionStorage.setItem('examCleanerHandoffImage', dataUrl);
       sessionStorage.setItem('examCleanerHandoffMeta', JSON.stringify({
         source: 'v2.1-scanner',
+        provider: 'openai',
         width: resultCanvas.width,
         height: resultCanvas.height,
         createdAt: new Date().toISOString()
       }));
-      const target = new URL('../v2.2/alpha4.html', window.location.href).href;
+      const target = new URL('../v2.2/alpha5.html', window.location.href).href;
       window.top.location.href = target;
     } catch (error) {
       if (typeof setStatus === 'function') {

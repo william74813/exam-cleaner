@@ -1,12 +1,12 @@
 const API_VERSION = 'exam-clean-v2';
-const PROMPT_VERSION = 'printed-preservation-v3';
-const DEFAULT_MODEL = 'gemini-3.1-flash-image';
+const PROMPT_VERSION = 'printed-preservation-openai-v1';
+const DEFAULT_MODEL = 'gpt-image-1.5';
 const MAX_BASE64_LENGTH = 18_000_000;
 const MAX_OUTPUT_BASE64_LENGTH = 24_000_000;
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
-const PROMPT = `Edit the provided scanned examination page as a conservative document-restoration task.
+const PROMPT = `Perform a conservative document-restoration edit on the supplied scanned examination page.
 
 PRINTED CONTENT IS IMMUTABLE:
 Preserve every original printed element exactly, including every question, instruction, Chinese and English character, number, punctuation mark, page number, mathematical formula, operator, unit, answer line, table border, diagram, illustration, photograph, graphic, logo, barcode and QR code. Preserve the original position, scale, spacing, orientation, aspect ratio and page layout.
@@ -94,28 +94,21 @@ async function enforceRateLimit(request, env, origin) {
 }
 
 function extractOutputImage(payload) {
-  for (const candidate of payload?.candidates || []) {
-    for (const part of candidate?.content?.parts || []) {
-      if (part?.thought) continue;
-      const inline = part?.inlineData || part?.inline_data;
-      if (inline?.data) {
-        return {
-          mimeType: inline.mimeType || inline.mime_type || 'image/png',
-          data: inline.data
-        };
-      }
-    }
-  }
-  return null;
+  const image = payload?.data?.[0];
+  if (!image?.b64_json) return null;
+  return {
+    mimeType: payload.output_format ? `image/${payload.output_format === 'jpg' ? 'jpeg' : payload.output_format}` : 'image/png',
+    data: image.b64_json
+  };
 }
 
-async function fetchGemini(fetchImpl, url, init, requestId) {
+async function fetchOpenAI(fetchImpl, init, requestId) {
   let lastResponse;
   for (let attempt = 0; attempt < 2; attempt++) {
-    const response = await fetchImpl(url, init);
+    const response = await fetchImpl('https://api.openai.com/v1/images/edits', init);
     lastResponse = response;
     if (!RETRYABLE_STATUS.has(response.status) || attempt === 1) return response;
-    console.warn('Gemini temporary failure; retrying once', {
+    console.warn('OpenAI temporary failure; retrying once', {
       requestId,
       status: response.status,
       attempt: attempt + 1
@@ -128,13 +121,21 @@ async function fetchGemini(fetchImpl, url, init, requestId) {
 function healthPayload(env) {
   return {
     service: 'exam-cleaner-proxy',
+    provider: 'openai',
     apiVersion: API_VERSION,
     promptVersion: PROMPT_VERSION,
-    model: env.GEMINI_MODEL || DEFAULT_MODEL,
-    ready: Boolean(env.GEMINI_API_KEY && env.ACCESS_TOKEN),
+    model: env.OPENAI_MODEL || DEFAULT_MODEL,
+    ready: Boolean(env.OPENAI_API_KEY && env.ACCESS_TOKEN),
     authRequired: true,
     maxInputBase64Bytes: MAX_BASE64_LENGTH
   };
+}
+
+function openAIErrorMessage(status) {
+  if (status === 401 || status === 403) return 'OpenAI API Key 無效或沒有模型權限';
+  if (status === 429) return 'OpenAI 服務目前繁忙、已達速率限制或額度不足';
+  if (status === 400) return 'OpenAI 無法接受此圖片或編輯設定';
+  return 'OpenAI 圖片編輯服務處理失敗，請稍後再試';
 }
 
 export function createHandler({ fetchImpl = fetch } = {}) {
@@ -144,8 +145,7 @@ export function createHandler({ fetchImpl = fetch } = {}) {
       const origin = isAllowedOrigin(request, env);
 
       if (request.method === 'GET' && url.pathname === '/health') {
-        const healthOrigin = origin || '*';
-        return json(healthPayload(env), 200, healthOrigin);
+        return json(healthPayload(env), 200, origin || '*');
       }
 
       if (url.pathname !== '/api/clean') {
@@ -161,7 +161,7 @@ export function createHandler({ fetchImpl = fetch } = {}) {
         return json({ error: 'Method not allowed' }, 405, origin || 'null');
       }
       if (!origin) return json({ error: 'Origin not allowed' }, 403, 'null');
-      if (!env.GEMINI_API_KEY) return json({ error: 'Proxy 尚未設定 Gemini API Key' }, 503, origin);
+      if (!env.OPENAI_API_KEY) return json({ error: 'Proxy 尚未設定 OpenAI API Key' }, 503, origin);
       if (!env.ACCESS_TOKEN) return json({ error: 'Proxy 尚未設定存取權杖' }, 503, origin);
       if (!(await validateAccessToken(request, env))) return json({ error: '存取權杖錯誤' }, 401, origin);
 
@@ -205,57 +205,60 @@ export function createHandler({ fetchImpl = fetch } = {}) {
       }
 
       const requestId = safeRequestId(body?.clientRequestId);
-      const model = env.GEMINI_MODEL || DEFAULT_MODEL;
+      const model = env.OPENAI_MODEL || DEFAULT_MODEL;
+      const tokenHash = await sha256Hex(request.headers.get('X-Exam-Cleaner-Token') || origin);
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 125_000);
+      const timeout = setTimeout(() => controller.abort(), 180_000);
       const startedAt = Date.now();
+      const inputDataUrl = `data:${mimeType};base64,${data}`;
 
       try {
-        const upstreamUrl = `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(model)}:generateContent`;
-        const upstream = await fetchGemini(fetchImpl, upstreamUrl, {
+        const upstream = await fetchOpenAI(fetchImpl, {
           method: 'POST',
           signal: controller.signal,
           headers: {
+            'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
             'Content-Type': 'application/json',
-            'x-goog-api-key': env.GEMINI_API_KEY
+            'X-Client-Request-Id': requestId
           },
           body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: PROMPT },
-                { inline_data: { mime_type: mimeType, data } }
-              ]
-            }],
-            generationConfig: {
-              responseModalities: ['IMAGE']
-            }
+            model,
+            images: [{ image_url: inputDataUrl }],
+            prompt: PROMPT,
+            input_fidelity: 'high',
+            quality: 'high',
+            size: 'auto',
+            output_format: 'png',
+            background: 'opaque',
+            moderation: 'auto',
+            n: 1,
+            user: `exam-cleaner-${tokenHash.slice(0, 24)}`
           })
         }, requestId);
 
+        const providerRequestId = upstream.headers.get('x-request-id') || null;
         const payload = await upstream.json().catch(() => ({}));
         if (!upstream.ok) {
-          console.error('Gemini request failed', {
+          console.error('OpenAI request failed', {
             requestId,
+            providerRequestId,
             status: upstream.status,
             durationMs: Date.now() - startedAt,
-            providerMessage: payload?.error?.message || 'unknown'
+            providerCode: payload?.error?.code || null,
+            providerType: payload?.error?.type || null
           });
           const status = upstream.status === 429 ? 429 : 502;
-          return json({
-            error: upstream.status === 429
-              ? 'AI 服務目前繁忙或已達配額，請稍後再試'
-              : 'AI 服務處理失敗，請稍後再試',
-            requestId
-          }, status, origin);
+          return json({ error: openAIErrorMessage(upstream.status), requestId }, status, origin);
         }
 
         const image = extractOutputImage(payload);
         if (!image || image.data.length > MAX_OUTPUT_BASE64_LENGTH) {
-          console.error('Gemini returned no usable image', {
+          console.error('OpenAI returned no usable image', {
             requestId,
+            providerRequestId,
             durationMs: Date.now() - startedAt
           });
-          return json({ error: 'AI 沒有回傳可用圖片', requestId }, 502, origin);
+          return json({ error: 'OpenAI 沒有回傳可用圖片', requestId }, 502, origin);
         }
 
         return json({
@@ -263,9 +266,11 @@ export function createHandler({ fetchImpl = fetch } = {}) {
           image,
           warnings: [],
           meta: {
+            provider: 'openai',
             promptVersion: PROMPT_VERSION,
             model,
-            durationMs: Date.now() - startedAt
+            durationMs: Date.now() - startedAt,
+            providerRequestId
           }
         }, 200, origin);
       } catch (error) {
@@ -277,7 +282,7 @@ export function createHandler({ fetchImpl = fetch } = {}) {
           message: error?.message
         });
         return json({
-          error: timeoutError ? 'AI 處理逾時' : 'Proxy 暫時無法連線',
+          error: timeoutError ? 'OpenAI 圖片處理逾時' : 'Proxy 暫時無法連線',
           requestId
         }, timeoutError ? 504 : 502, origin);
       } finally {

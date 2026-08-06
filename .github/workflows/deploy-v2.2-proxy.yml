@@ -1,10 +1,10 @@
-name: Deploy v2.2 AI Proxy
+name: Deploy v2.2 OpenAI Proxy
 
 on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: '輸入 DEPLOY 確認部署正式 Proxy'
+        description: '輸入 DEPLOY 確認部署正式 OpenAI Proxy'
         required: true
         type: string
 
@@ -23,7 +23,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Run integrity tests
+      - name: Run integrity and proxy tests
         run: npm test
 
       - name: Deploy Cloudflare Worker
@@ -36,10 +36,10 @@ jobs:
           wranglerVersion: '4'
           command: deploy
           secrets: |
-            GEMINI_API_KEY
+            OPENAI_API_KEY
             ACCESS_TOKEN
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ACCESS_TOKEN: ${{ secrets.EXAM_CLEANER_ACCESS_TOKEN }}
 
       - name: Verify health endpoint
@@ -53,8 +53,8 @@ jobs:
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
         run: |
-          echo '## Exam Cleaner v2.2 Proxy 已部署' >> "$GITHUB_STEP_SUMMARY"
+          echo '## Exam Cleaner v2.2 OpenAI Proxy 已部署' >> "$GITHUB_STEP_SUMMARY"
           echo '' >> "$GITHUB_STEP_SUMMARY"
           echo "- Health: ${DEPLOYMENT_URL%/}/health" >> "$GITHUB_STEP_SUMMARY"
           echo "- Proxy URL: ${DEPLOYMENT_URL%/}/api/clean" >> "$GITHUB_STEP_SUMMARY"
-          echo '- 請勿在 Issue、PR 或聊天貼出 Gemini API Key 或存取權杖。' >> "$GITHUB_STEP_SUMMARY"
+          echo '- 請勿在 Issue、PR 或聊天貼出 OpenAI API Key 或存取權杖。' >> "$GITHUB_STEP_SUMMARY"
