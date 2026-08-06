@@ -4,16 +4,23 @@ on:
   pull_request:
     paths:
       - 'preview/v2.2/**'
+      - 'worker/**'
+      - 'workers/**'
       - 'tests/**'
       - 'package.json'
       - '.github/workflows/v2.2-integrity-tests.yml'
+      - '.github/workflows/deploy-v2.2-proxy.yml'
   push:
     branches:
       - feature/v2.2-unified-ai-cleaner
     paths:
       - 'preview/v2.2/**'
+      - 'worker/**'
+      - 'workers/**'
       - 'tests/**'
       - 'package.json'
+      - '.github/workflows/v2.2-integrity-tests.yml'
+      - '.github/workflows/deploy-v2.2-proxy.yml'
 
 permissions:
   contents: read
@@ -21,10 +28,16 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm test
+      - name: Run browser integrity and Proxy unit tests
+        run: npm test
+      - name: Validate Cloudflare Worker bundle
+        run: |
+          printf 'GEMINI_API_KEY=test-only\nACCESS_TOKEN=test-only\n' > worker/.dev.vars
+          npx --yes wrangler@4.94.0 deploy --dry-run --config worker/wrangler.jsonc
+          rm -f worker/.dev.vars
