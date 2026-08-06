@@ -3,6 +3,7 @@ name: v2.2 integrity tests
 on:
   pull_request:
     paths:
+      - 'preview/v2.1/v22-handoff-v2.js'
       - 'preview/v2.2/**'
       - 'worker/**'
       - 'workers/**'
@@ -14,7 +15,9 @@ on:
     branches:
       - main
       - feature/v2.2-unified-ai-cleaner
+      - feature/v2.2-openai-proxy
     paths:
+      - 'preview/v2.1/v22-handoff-v2.js'
       - 'preview/v2.2/**'
       - 'worker/**'
       - 'workers/**'
@@ -35,10 +38,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run browser integrity and Proxy unit tests
+      - name: Run browser integrity and OpenAI Proxy unit tests
         run: npm test
       - name: Validate Cloudflare Worker bundle
         run: |
-          printf 'GEMINI_API_KEY=test-only\nACCESS_TOKEN=test-only\n' > worker/.dev.vars
+          printf 'OPENAI_API_KEY=test-only\nACCESS_TOKEN=test-only\n' > worker/.dev.vars
           npx --yes wrangler@4.94.0 deploy --dry-run --config worker/wrangler.jsonc
           rm -f worker/.dev.vars
