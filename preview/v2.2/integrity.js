@@ -149,7 +149,10 @@ export function assessIntegrity(metrics) {
     score -= 9;
   }
 
-  if (metrics.edgeRetention < 0.72) {
+  if (metrics.edgeRetention < 0.50) {
+    warnings.push('大量印刷線條／文字邊緣可能被刪除');
+    score -= 48;
+  } else if (metrics.edgeRetention < 0.72) {
     warnings.push('印刷線條／文字邊緣保留率偏低');
     score -= 34;
   } else if (metrics.edgeRetention < 0.86) {
