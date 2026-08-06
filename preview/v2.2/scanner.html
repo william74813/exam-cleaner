@@ -9,22 +9,22 @@
 </head>
 <body>
 <div id="loading">正在載入掃描器與 v2.2 接續模組…</div>
-<iframe id="app" src="../v2.1/index.html?v=v22-handoff-a2" title="Exam Cleaner 掃描器"></iframe>
+<iframe id="app" src="../v2.1/index.html?v=v22-handoff-a21" title="Exam Cleaner 掃描器"></iframe>
 <script>
 const frame=document.getElementById('app');
 frame.addEventListener('load',()=>{
   try{
     const doc=frame.contentDocument;
     const queue=[
-      '../v2.1/enhance-v1.js?v=v22-handoff-a2',
-      '../v2.1/default-gray-v1.js?v=v22-handoff-a2',
-      '../v2.1/rc-ui.js?v=v22-handoff-a2',
-      '../v2.1/detect-grabcut-v1.js?v=v22-handoff-a2',
-      '../v2.1/touch-corner-handles-v1.js?v=v22-handoff-a2',
-      '../v2.1/release-ui-v21.js?v=v22-handoff-a2',
+      '../v2.1/enhance-v1.js?v=v22-handoff-a21',
+      '../v2.1/default-gray-v1.js?v=v22-handoff-a21',
+      '../v2.1/rc-ui.js?v=v22-handoff-a21',
+      '../v2.1/detect-grabcut-v1.js?v=v22-handoff-a21',
+      '../v2.1/touch-corner-handles-v1.js?v=v22-handoff-a21',
+      '../v2.1/release-ui-v21.js?v=v22-handoff-a21',
       'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
-      '../v2.1/multipage-v1.js?v=v22-handoff-a2',
-      '../v2.1/v22-handoff.js?v=v22-handoff-a2'
+      '../v2.1/multipage-v1.js?v=v22-handoff-a21',
+      '../v2.1/v22-handoff.js?v=v22-handoff-a21'
     ];
     const fail=()=>{document.getElementById('loading').textContent='模組載入失敗，請確認網路後關閉分頁再重開。'};
     const next=()=>{
