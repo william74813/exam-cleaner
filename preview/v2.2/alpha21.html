@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d4ed8">
+<title>Exam Cleaner v2.2 Alpha.2.1｜接續顯示修正</title>
+<style>
+html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#eef2f7}
+iframe{display:block}
+#loading{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:#eef2f7;color:#1d4ed8;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;text-align:center;padding:24px;line-height:1.7}
+</style>
+</head>
+<body>
+<div id="loading">正在接收 v2.1 校正結果…</div>
+<iframe id="app" src="./alpha2.html?v=alpha21-20260806-0950" title="Exam Cleaner v2.2 Alpha.2.1"></iframe>
+<script>
+(() => {
+  'use strict';
+  const frame = document.getElementById('app');
+  const loading = document.getElementById('loading');
+
+  frame.addEventListener('load', () => {
+    loading.remove();
+    let doc;
+    try {
+      doc = frame.contentDocument;
+    } catch {
+      return;
+    }
+
+    let meta = null;
+    try {
+      meta = JSON.parse(sessionStorage.getItem('examCleanerHandoffMeta') || 'null');
+    } catch {}
+    if (!meta || meta.source !== 'v2.1-scanner') return;
+
+    const createdAt = Date.parse(meta.createdAt || '');
+    if (Number.isFinite(createdAt) && Date.now() - createdAt > 10 * 60 * 1000) {
+      sessionStorage.removeItem('examCleanerHandoffMeta');
+      return;
+    }
+
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts++;
+      const previewFrame = doc.getElementById('frame');
+      const beforeImage = doc.getElementById('before');
+      const fileInput = doc.getElementById('file');
+      const viewer = doc.querySelector('.viewer');
+
+      if (previewFrame && !previewFrame.hidden && beforeImage?.src?.startsWith('data:image/')) {
+        clearInterval(timer);
+
+        const section = fileInput?.closest('.section');
+        const heading = section?.querySelector('h2');
+        if (heading) heading.textContent = '1. 已匯入校正後考卷';
+
+        if (fileInput && !doc.getElementById('handoffImportedNotice')) {
+          const notice = doc.createElement('div');
+          notice.id = 'handoffImportedNotice';
+          notice.className = 'notice success';
+          notice.style.marginTop = '9px';
+          const size = meta.width && meta.height ? `（${meta.width}×${meta.height}）` : '';
+          notice.innerHTML = `<strong>已從 v2.1 自動匯入校正結果${size}</strong><br>上方檔案欄顯示「尚未選取檔案」是 Safari 的安全限制，不需要重新拍照或重新選圖。`;
+          fileInput.insertAdjacentElement('afterend', notice);
+
+          const hint = doc.createElement('p');
+          hint.className = 'small';
+          hint.textContent = '需要改用其他圖片時，才使用上方「選擇檔案」。';
+          notice.insertAdjacentElement('afterend', hint);
+        }
+
+        const toast = doc.createElement('div');
+        toast.textContent = '校正後考卷已成功帶入，正在移到圖片預覽區';
+        Object.assign(toast.style, {
+          position: 'fixed', left: '16px', right: '16px', top: '72px', zIndex: '9999',
+          padding: '12px 14px', borderRadius: '12px', background: '#087f5b', color: '#fff',
+          font: '700 14px -apple-system,BlinkMacSystemFont,sans-serif', textAlign: 'center',
+          boxShadow: '0 6px 22px rgba(0,0,0,.24)'
+        });
+        doc.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3200);
+        setTimeout(() => viewer?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 250);
+        sessionStorage.removeItem('examCleanerHandoffMeta');
+      } else if (attempts >= 80) {
+        clearInterval(timer);
+      }
+    }, 100);
+  });
+})();
+</script>
+</body>
+</html>
