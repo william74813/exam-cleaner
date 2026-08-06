@@ -1,0 +1,30 @@
+name: v2.2 integrity tests
+
+on:
+  pull_request:
+    paths:
+      - 'preview/v2.2/**'
+      - 'tests/**'
+      - 'package.json'
+      - '.github/workflows/v2.2-integrity-tests.yml'
+  push:
+    branches:
+      - feature/v2.2-unified-ai-cleaner
+    paths:
+      - 'preview/v2.2/**'
+      - 'tests/**'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
